@@ -243,10 +243,6 @@ class SpikeDat():
         isicount = self.spikecount - 1
         if neurodata != None: self.times[0] = neurodata.times[0]
 
-        # DiagWrite(f"SpikeDat Analysis() times[0] {neurodata.times[0]}\n")
-        # DiagWrite(f"SpikeDat Analysis() times[1] {neurodata.times[1]}\n")
-        # DiagWrite(f"SpikeDat Analysis() times[2] {neurodata.times[2]}\n")
-
         # 1ms ISI Histogram
         for i in range(isicount):                                   
             if i > self.maxspikes: break
@@ -254,8 +250,6 @@ class SpikeDat():
             self.isis[i] = self.times[i+1] - self.times[i]
             if self.isis[i] >= self.histsize: continue  # skip if spike interval is very large
             if self.hist1.xmax < int(self.isis[i]): self.hist1.xmax = int(self.isis[i])
-            #if self.hist1.size < self.hist1.xmax + 1: self.hist1.resize(self.hist1.xmax + 1) np.resize(self.hist1, 20000)
-            #if self.hist1.size < self.hist1.xmax + 1: self.hist1.resize(20000)
             try:
                 if self.isis[i] < self.histsize: self.hist1[int(self.isis[i])] += 1
             except Exception:
@@ -338,8 +332,6 @@ class SpikeDat():
 
         DiagWrite(f"SpikeDat Analysis() freq {self.freq:.2f}\n")
 
-        #for i in range(1, 50):
-        #    DiagWrite(f"hist5 bin {i} {self.hist5[i]}\n")
 
     def dispcalc(self, binsize):
         maxbin = 10000
