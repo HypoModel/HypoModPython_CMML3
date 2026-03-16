@@ -681,11 +681,11 @@ class ParamBox(ToolBox):
 
 
     def SetStatus(self, text):
-        if self.status != None: self.status.SetLabel(text)
+        if self.status is not None: self.status.SetLabel(text)
 
 
     def WriteVDU(self, text):
-        if self.vdu != None: self.vdu.AppendText(text)
+        if self.vdu is not None: self.vdu.AppendText(text)
 
 
     def VBox(self, num):
@@ -724,11 +724,11 @@ class ParamBox(ToolBox):
 
 
     def StoreBox(self, label="", storepanel=None):
-        if self.storetag == None: return
+        if self.storetag is None: return
         paramfilebox = wx.BoxSizer(wx.HORIZONTAL)
         parambuttons = wx.BoxSizer(wx.HORIZONTAL)
 
-        if storepanel == None: storepanel = self.panel
+        if storepanel is None: storepanel = self.panel
         if self.activepanel != self.panel: self.storetag.Reparent(self.activepanel)
 
         if label != "": self.storetag.SetLabel(label)

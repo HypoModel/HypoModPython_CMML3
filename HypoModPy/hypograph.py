@@ -24,7 +24,7 @@ class GraphDisp():
 
     # XYSynch() - Synchronise X and Y axes for all plots
     def XYSynch(self, plotzero=None):  
-        if plotzero == None: plotzero = self.plots[0]
+        if plotzero is None: plotzero = self.plots[0]
         
         for plot in self.plots:
             plot.yfrom = plotzero.yfrom
@@ -208,7 +208,7 @@ class GraphPanel(wx.Panel):
             max = 1000
         #else: plot.xmax = len(plot.data) / plot.xscale
         else: plot.xmax = plot.data.xmax / plot.xscale
-        if plot.xdata != None: 
+        if plot.xdata is not None: 
             if xmax: plot.xmax = xmax
             else: plot.xmax = plot.xdata.xmax
 
@@ -314,7 +314,8 @@ class GraphPanel(wx.Panel):
         for settag in mod.plotbase.setstore:
             plotset = mod.plotbase.setstore[settag]
             if not plotset.submenu:
-                menuitem = wx.MenuItem(menuPlot, wx.ID_ANY, settag, "", wx.ITEM_CHECK)
+                menuitem = wx.MenuItem(menuPlot, wx.ID_ANY, plotset.label, "", wx.ITEM_CHECK)
+                DiagWrite(f"right click {settag}\n")
 #ifndef OSX
                 #menuitem->SetBitmaps(radio_on, radio_off)
 #endif
@@ -326,14 +327,15 @@ class GraphPanel(wx.Panel):
                 #menuPlot->AppendRadioItem(1000 + i, graphset->name)
             else:
                 subPlot = wx.Menu()
-                for plottag in plotset.plottags:
-                    menuitem = wx.MenuItem(subPlot, wx.ID_ANY, plottag, "", wx.ITEM_CHECK)
+                for plot in plotset:
+                    menuitem = wx.MenuItem(subPlot, wx.ID_ANY, plot.label, "", wx.ITEM_CHECK)
+                    DiagWrite(f"right click {plot.label}\n")
 #ifndef OSX
                     #menuitem->SetBitmaps(radio_on, radio_off)
 #endif
                     subPlot.Append(menuitem)
                     menuitem.Check(False)
-                    self.menuIdPlotMap[menuitem.GetId()] = plottag
+                    self.menuIdPlotMap[menuitem.GetId()] = plot.plottag
                     self.Bind(wx.EVT_MENU, self.OnGraphSelectPlot, menuitem)
 
                 #subPlot->AppendRadioItem(2000 + graphset->gindex[j], graphset->GetPlot(j)->gname)
@@ -705,7 +707,7 @@ class GraphPanel(wx.Panel):
                         if binsize == 0.01: res = 2
                         if binsize == 0.001: res = 3
 
-                        if burstdata == None or burstdata.burstdisp == 0:
+                        if burstdata is None or burstdata.burstdisp == 0:
                             gc.SetPen(wx.Pen(self.colourpen["red"]))
                  
                         else:                  # burst colouring
