@@ -36,6 +36,7 @@ class MainFrame(wx.Frame):
 
         # Initialise ToolBoxes
         self.diagbox = DiagBox(self, "Diagnostic", wx.Point(0, 0), wx.Size(400, 500))
+        SetDiagBoxTarget(self.diagbox)
         self.diagbox.Write('Diagnostic Box OK\n')
         self.gridbox = None
         self.plotcon = None
@@ -554,7 +555,7 @@ class HypoMain(MainFrame):
         self.scalebox.storetag.HistStore()
         #if(project.mod): 
         #    project.Store()
-        if(self.mod != None):
+        if(self.mod is not None):
             self.mod.ModStore()
             self.mod.modbox.Close()
             #self.mod.Destroy()

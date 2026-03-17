@@ -88,7 +88,7 @@ class Mod(wx.EvtHandler):
 
         for box in self.modtools.values():
             outfile.WriteLine("{} {} {} {} {} {}".format(box.tag, box.mpos.x, box.mpos.y, box.size.x, box.size.y, box.IsShown()))
-            if box.storetag != None: box.storetag.HistStore()
+            if box.storetag is not None: box.storetag.HistStore()
 
         outfile.Close()
         print("ModStore OK")
@@ -138,10 +138,10 @@ class Mod(wx.EvtHandler):
 
 
 class ModThread(Thread):
-    def __init__(self, box, mainwin):
+    def __init__(self, params, mainwin):
         Thread.__init__(self)
 
-        self.modbox = box
+        #self.modbox = box
         self.mainwin = mainwin
         self.diag = False
 

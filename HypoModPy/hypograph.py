@@ -138,6 +138,7 @@ class GraphPanel(wx.Panel):
 
         if self.mainwin.hypoflags["xypos"]:
             plot = self.GetFrontPlot()
+            if plot is None: return
 
             # 27/11/20 fixed scaling using adjusted axis unit scales, still need to fix for measure
 
@@ -201,7 +202,7 @@ class GraphPanel(wx.Panel):
 
     def ScrollUpdate(self, xmax=0):
         plot = self.GetFrontPlot()
-        if not plot: return
+        if plot is None: return
         if not any(plot.data):
             #mod->diagbox->Write("plot " + plot.gname + " no data\n")
             #return
@@ -272,6 +273,7 @@ class GraphPanel(wx.Panel):
 
     def GetFrontPlot(self):
         if len(self.dispset) == 0: return None
+        if len(self.dispset[0].plots) == 0: return None
         else: return self.dispset[0].plots[0]
 
 

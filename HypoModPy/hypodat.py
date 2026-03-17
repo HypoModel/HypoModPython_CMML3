@@ -1,5 +1,6 @@
 
 from HypoModPy.hypobase import *
+from HypoModPy.hypotools import DiagWrite
 import numpy as np
 
 
@@ -379,7 +380,7 @@ class PlotBase():
 
         # If single graph, create new single graph set, otherwise add to set 'settag'
         # single plot sets use the same tag as the plot
-        if settag != None:
+        if settag is not None:
             if settag == "": plotset = self.NewSet(newplot.label, plottag)
             else: plotset = self.setstore[settag]
 

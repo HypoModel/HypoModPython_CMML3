@@ -195,7 +195,7 @@ class ToolBox(wx.Frame):
 
 
     def AddButton(self, id, label, width, box, pad=1, height=0, panel=None):
-        if panel == None: panel = self.activepanel
+        if panel is None: panel = self.activepanel
         if height == 0: height = self.buttonheight
         button = ToolButton(panel, id, label, wx.DefaultPosition, wx.Size(width, height))
         button.SetFont(self.confont)
@@ -325,7 +325,7 @@ class TextBox(wx.TextCtrl):
 
 
     def SetNumValue(self, value, valrange=None):
-        if valrange == None: valrange = value
+        if valrange is None: valrange = value
         if valrange < 1:
             self.SetValue("{:.3f}".format(value))
         elif valrange < 10:
@@ -336,6 +336,17 @@ class TextBox(wx.TextCtrl):
             self.SetValue("{:.0f}".format(value))  
 
 
+diagbox_target = None
+
+def SetDiagBoxTarget(target):
+    global diagbox_target
+    diagbox_target = target
+
+def DiagWrite(text):
+    if diagbox_target is None:
+        return
+    diagbox_target.DiagWrite(text)
+
 
 class DiagBox(ToolBox):
     def __init__(self, parent, title, pos, size):
@@ -344,15 +355,21 @@ class DiagBox(ToolBox):
 
         self.textbox = wx.TextCtrl(self.panel, -1, "", wx.DefaultPosition, wx.DefaultSize, wx.TE_MULTILINE)
         self.mainbox.Add(self.textbox, 1, wx.EXPAND)
-
+        self.Bind(EVT_DIAG, self.OnDiagEvent)
 
     def Write(self, text):
         try:
-            self.textbox.AppendText(text) 
+            self.textbox.AppendText(text)
             return True
         except ValueError:
             return False
-         
+
+    def DiagWrite(self, text):
+        evt = DiagEvent(text)
+        wx.QueueEvent(self, evt)
+
+    def OnDiagEvent(self, event):
+        self.textbox.AppendText(event.text)      
 
 
 

@@ -129,7 +129,7 @@ class SpikeDataPanel(ToolPanel):
 
 
     def PanelData(self, cellspike):
-        self.datneuron.SetLabel(numstring(self.cellindex))
+        self.datneuron.ChangeValue(numstring(self.cellindex))
         self.label.SetLabel(cellspike.name)
         self.spikes.SetLabel(numstring(cellspike.spikecount))
         self.freq.SetLabel(numstring(cellspike.freq, 2))
@@ -229,7 +229,7 @@ class SpikeDat():
         binmax1 = 20000
         binmax5 = 10000
 
-        if neurodata != None:
+        if neurodata is not None:
             self.spikecount = neurodata.spikecount
             self.maxspikes = neurodata.maxspikes
             #DiagWrite(f"SpikeDat Analysis() name {neurodata.name} spikecount {neurodata.spikecount}\n")
@@ -241,12 +241,12 @@ class SpikeDat():
         # ISIs, Histogram, Freq, Variance
 
         isicount = self.spikecount - 1
-        if neurodata != None: self.times[0] = neurodata.times[0]
+        if neurodata is not None: self.times[0] = neurodata.times[0]
 
         # 1ms ISI Histogram
         for i in range(isicount):                                   
-            if i > self.maxspikes: break
-            if neurodata != None: self.times[i+1] = neurodata.times[i+1]
+            if i+1 >= self.maxspikes: break
+            if neurodata is not None: self.times[i+1] = neurodata.times[i+1]
             self.isis[i] = self.times[i+1] - self.times[i]
             if self.isis[i] >= self.histsize: continue  # skip if spike interval is very large
             if self.hist1.xmax < int(self.isis[i]): self.hist1.xmax = int(self.isis[i])

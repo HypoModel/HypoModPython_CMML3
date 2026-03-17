@@ -109,7 +109,7 @@ class ScaleBox(ToolPanel):
     def OnOverlay(self, event):
         #DiagWrite("OnOverlay()\n")
         overlay = self.overset[event.GetId()]
-        if overlay == None:
+        if overlay is None:
             DiagWrite("ScaleBox overlay ID not found\n")
             return
  

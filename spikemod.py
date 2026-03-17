@@ -117,14 +117,27 @@ class SpikeMod(Mod):
         if not self.runflag:
             self.mainwin.SetStatusText("Spike Model Run")
             self.runflag = True
-            modthread = SpikeModel(self)
+            params = self.modbox.GetParams()
+
+            # multibox example
+            #
+            # params = {
+            #     "spike": self.spikebox.GetParams(),
+            #     "neuro": self.neurobox.GetParams(),
+            #     "syn": self.synbox.GetParams(),
+            # }
+            #
+
+            modthread = SpikeModel(self, params)
             modthread.start()
+           
 
 
 class SpikeModel(ModThread):
-    def __init__(self, mod):
-        ModThread.__init__(self, mod.modbox, mod.mainwin)
+    def __init__(self, mod, params):
+        ModThread.__init__(self, params, mod.mainwin)
 
+        self.params = params
         self.mod = mod
         self.spikemodbox = mod.spikemodbox
         self.mainwin = mod.mainwin
@@ -149,7 +162,7 @@ class SpikeModel(ModThread):
     # Model() reads in the model parameters, initialises variables, and runs the main model loop
     def Model(self):
         spikedata = self.mod.modspike
-        params = self.spikemodbox.GetParams()
+        params = self.params
         #protoparams = self.mod.protobox.GetParams()
 
 
@@ -164,8 +177,8 @@ class SpikeModel(ModThread):
         halflifeMem = params["halflifeMem"]
         kHAP = params["kHAP"]
         halflifeHAP = params["halflifeHAP"]
-        #kAHP = params["kAHP"]
-        #halflifeAHP = params["halflifeAHP"]
+        kAHP = params["kAHP"]
+        halflifeAHP = params["halflifeAHP"]
 
         epspmag = pspmag
         ipspmag = pspmag
@@ -176,7 +189,7 @@ class SpikeModel(ModThread):
         # Spiking 
         tauMem = math.log(2) / halflifeMem
         tauHAP = math.log(2) / halflifeHAP
-        #tauAHP = math.log(2) / halflifeAHP
+        tauAHP = math.log(2) / halflifeAHP
 
         # Initialise variables
         epsprate = 0
@@ -188,7 +201,7 @@ class SpikeModel(ModThread):
         inputPSP = 0
         tPSP = 0
         tHAP = 0
-        #tAHP = 0
+        tAHP = 0
 
         spikedata.spikecount = 0
         maxspikes = spikedata.maxspikes
@@ -232,9 +245,9 @@ class SpikeModel(ModThread):
 
             tHAP = tHAP - tHAP * tauHAP
 
-            #tAHP = tAHP - tAHP * tauAHP
+            tAHP = tAHP - tAHP * tauAHP
 
-            V = Vrest + tPSP - tHAP # - tAHP
+            V = Vrest + tPSP - tHAP - tAHP
 
             #print(f"SpikeModel step {i}  V {V:.2f}  tPSP {tPSP:.2f}  inputPSP {inputPSP:.2f}  nepsp {nepsp}")
 
@@ -250,7 +263,10 @@ class SpikeModel(ModThread):
                 # Spike incremented variable
                 # afterpotentials
                 tHAP = tHAP + kHAP
-                #tAHP = tAHP + kAHP
+                tAHP = tAHP + kAHP
+                
+                ttime = 0
+                #DiagWrite("spike fired\n")
 
         freq = spikedata.spikecount / (runtime / 1000)
         DiagWrite(f"Spike Model OK, generated {spikedata.spikecount} spikes, freq {freq:.2f}\n")
@@ -283,8 +299,8 @@ class SpikeModBox(ParamBox):
         self.paramset.AddCon("halflifeMem", "halflifeMem", 7.5, 0.1, 2)
         self.paramset.AddCon("kHAP", "kHAP", 60, 0.1, 2)
         self.paramset.AddCon("halflifeHAP", "halflifeHAP", 8, 0.1, 2)
-        #self.paramset.AddCon("kAHP", "kAHP", 0.5, 0.01, 2)
-        #self.paramset.AddCon("halflifeAHP", "halflifeAHP", 500, 1, 2)
+        self.paramset.AddCon("kAHP", "kAHP", 0.5, 0.01, 2)
+        self.paramset.AddCon("halflifeAHP", "halflifeAHP", 500, 1, 2)
 
         self.ParamLayout(2)   # layout parameter controls in two columns
 
@@ -308,8 +324,7 @@ class SpikeModBox(ParamBox):
         self.panel.Layout()
 
 
-    def SetCount(self, value):
-        self.runcount.SetLabel(f"{value} %")
+    
 
 
 

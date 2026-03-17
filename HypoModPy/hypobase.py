@@ -21,7 +21,6 @@ studentmode = 1
 #modpathwin = "C:/Users/Duncan/Model"
 
 
-
 def GetSystem():
     oslabel = wx.GetOsDescription()
     if oslabel.startswith("Windows"): return 'Windows'
@@ -30,9 +29,19 @@ def GetSystem():
     return 0
 
 
-def DiagWrite(text):
-    pub.sendMessage("diagbox", message=text)
+DiagEventType = wx.NewEventType()
+EVT_DIAG = wx.PyEventBinder(DiagEventType, 1)
 
+class DiagEvent(wx.PyCommandEvent):
+    def __init__(self, text=""):
+        super().__init__(DiagEventType)
+        self.text = text
+
+
+
+# def DiagWrite(text):
+#     #pub.sendMessage("diagbox", message=text)
+#     test = 1
 
 
 class TextFile():
