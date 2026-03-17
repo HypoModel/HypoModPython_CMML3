@@ -74,8 +74,9 @@ class Mod(wx.EvtHandler):
     
 
     def AddTool(self, toolbox):
-        self.modtools[toolbox.boxtag] = toolbox
+        self.modtools[toolbox.tag] = toolbox
         self.mainwin.toolset.AddBox(toolbox)  
+        print("AddTool", toolbox.tag, toolbox.boxtag)
       
 
     def ModStore(self):

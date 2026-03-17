@@ -10,6 +10,8 @@ from HypoModPy.hypodat import *
 from HypoModPy.hypogrid import *
 from HypoModPy.hypospikes import *
 
+from spikepanels import SpikeModBox, SecModBox
+
 
 class SpikeMod(Mod):
     def __init__(self, mainwin, tag):
@@ -26,6 +28,7 @@ class SpikeMod(Mod):
         # tool boxes
         self.gridbox = GridBox(self, "Data Grid", wx.Point(0, 0), wx.Size(320, 500), 100, 20)
         self.gridbox.NeuroButton()
+        self.secmodbox = SecModBox(self, "secmod", "Secretion Model", wx.Point(0, 0), wx.Size(320, 500))
         self.spikemodbox = SpikeModBox(self, "spikemod", "Spike Model", wx.Point(0, 0), wx.Size(320, 500))
         self.spikedatabox = SpikeDataBox(self, "spikedatabox", "Spike Data", wx.Point(0, 0), wx.Size(320, 500))
 
@@ -41,6 +44,7 @@ class SpikeMod(Mod):
         self.spikedata = []
 
         self.AddTool(self.spikemodbox)
+        self.AddTool(self.secmodbox)
         self.AddTool(self.gridbox)
         self.AddTool(self.spikedatabox)
     
@@ -117,7 +121,10 @@ class SpikeMod(Mod):
         if not self.runflag:
             self.mainwin.SetStatusText("Spike Model Run")
             self.runflag = True
-            params = self.modbox.GetParams()
+            params = {
+                "spike": self.modbox.GetParams(),
+                "sec": self.secmodbox.GetParams()
+            }
 
             # multibox example
             #
@@ -162,23 +169,38 @@ class SpikeModel(ModThread):
     # Model() reads in the model parameters, initialises variables, and runs the main model loop
     def Model(self):
         spikedata = self.mod.modspike
-        params = self.params
-        #protoparams = self.mod.protobox.GetParams()
-
+        spikeparams = self.params["spike"]
+        secparams = self.params["sec"]
 
         # Read parameters
-        runtime = int(params["runtime"])
-        hstep = params["hstep"]
-        Vthresh = params["Vthresh"]
-        Vrest = params["Vrest"]
-        pspmag = params["pspmag"]
-        psprate = params["psprate"]
-        pspratio = params["pspratio"]
-        halflifeMem = params["halflifeMem"]
-        kHAP = params["kHAP"]
-        halflifeHAP = params["halflifeHAP"]
-        kAHP = params["kAHP"]
-        halflifeAHP = params["halflifeAHP"]
+        runtime = int(spikeparams["runtime"])
+        hstep = spikeparams["hstep"]
+        Vthresh = spikeparams["Vthresh"]
+        Vrest = spikeparams["Vrest"]
+        pspmag = spikeparams["pspmag"]
+        psprate = spikeparams["psprate"]
+        pspratio = spikeparams["pspratio"]
+        halflifeMem = spikeparams["halflifeMem"]
+        kHAP = spikeparams["kHAP"]
+        halflifeHAP = spikeparams["halflifeHAP"]
+        kAHP = spikeparams["kAHP"]
+        halflifeAHP = spikeparams["halflifeAHP"]
+
+        halflifeB = secparams["halflifeB"]
+        halflifeE = secparams["halflifeE"]
+        halflifeC = secparams["halflifeC"]
+        Ethresh = secparams["Eth"]
+        Cthresh = secparams["Cth"]
+        Bbase = secparams["Bbase"]
+        alpha = secparams["alpha"]
+        Pmax = secparams["Pmax"]
+        Rinit = secparams["Rinit"]
+        secExp = secparams["secExp"]
+        beta = secparams["beta"]
+        Rmax = secparams["Rmax"]
+        kB = secparams["kB"]
+        kE = secparams["kE"]
+        kC = secparams["kC"]
 
         epspmag = pspmag
         ipspmag = pspmag
@@ -186,10 +208,20 @@ class SpikeModel(ModThread):
         
 
         # Time Constants - conversion from half-life
+
         # Spiking 
         tauMem = math.log(2) / halflifeMem
         tauHAP = math.log(2) / halflifeHAP
         tauAHP = math.log(2) / halflifeAHP
+
+        # Secretion
+        tauB = math.log(2) / halflifeB
+        tauE = math.log(2) / halflifeE
+        tauC = math.log(2) / halflifeC
+        tauDiff = math.log(2) / secparams["halflifeDiff"]
+        tauClear = math.log(2) / secparams["halflifeClear"]
+
+
 
         # Initialise variables
         epsprate = 0
@@ -202,6 +234,17 @@ class SpikeModel(ModThread):
         tPSP = 0
         tHAP = 0
         tAHP = 0
+
+        tB = 0  # Broadening
+        tE = 0  # Fast Ca2+
+        tC = 0.03   # Slow Ca2+
+        tR = Rinit  # Reserve Pool
+        tP = Pmax   # Releasable Pool 
+        tPlasma = 0 # Hormone plasma concentration
+        tEVF = 0
+
+        Ethpow = Ethresh * Ethresh * Ethresh * Ethresh * Ethresh  # precalculate instead of each loop
+        Cthpow = Cthresh * Cthresh * Cthresh
 
         spikedata.spikecount = 0
         maxspikes = spikedata.maxspikes
@@ -242,14 +285,40 @@ class SpikeModel(ModThread):
 
             # Spiking Model
             tPSP = tPSP + inputPSP - tPSP * tauMem
-
             tHAP = tHAP - tHAP * tauHAP
-
             tAHP = tAHP - tAHP * tauAHP
-
             V = Vrest + tPSP - tHAP - tAHP
 
             #print(f"SpikeModel step {i}  V {V:.2f}  tPSP {tPSP:.2f}  inputPSP {inputPSP:.2f}  nepsp {nepsp}")
+
+
+            # Secretion Model
+            tB = tB - (tB * tauB)    # broadening
+            tE = tE - (tE * tauE)    # fast Ca2+
+            tC = tC - (tC * tauC)    # slow Ca2+
+
+            EKpow = tE * tE * tE * tE * tE
+            Einh = 1 - EKpow / (EKpow + Ethpow)
+            CKpow = tC * tC * tC
+            Cinh = 1 - CKpow / (CKpow + Cthpow) 
+            CaEnt = Einh * Cinh * (tB + Bbase)   # Ca Entry
+            if secExp == 3: tEpow = tE * tE * tE            # vaso
+            if secExp == 2: tEpow = tE * tE                 # oxy
+            secX = tEpow * alpha * tP       # secretion rate, proportional to releasable pool and fast Ca2+
+
+            # Reserve Store (tR) and Releasable Pool (tP)
+            if tP < Pmax: 
+                fillP = beta * tR / Rmax
+            else:
+                fillP = 0
+
+            tP = tP - secX + fillP     # Releasable pool is decremented by secretion, incremented by filling from reserve store
+            fillR = 0   # no synthesis in this version
+            tR = tR + fillR - fillP    # Reserve store is decremented by filling releasable pool, incremented by synthesis
+
+            # Plasma Model
+            tPlasma = tPlasma + secX - tPlasma * tauClear
+            #tEVF = tEVF + tPlasma * tauDiff - tEVF
 
 
             # Spiking
@@ -264,64 +333,17 @@ class SpikeModel(ModThread):
                 # afterpotentials
                 tHAP = tHAP + kHAP
                 tAHP = tAHP + kAHP
-                
-                ttime = 0
-                #DiagWrite("spike fired\n")
 
+                tB = tB + kB
+                tE = tE + kE * CaEnt
+                tC = tC + kC * CaEnt	
+                
+                ttime = 0   # reset time since last spike
+
+        # Finalise data
         freq = spikedata.spikecount / (runtime / 1000)
         DiagWrite(f"Spike Model OK, generated {spikedata.spikecount} spikes, freq {freq:.2f}\n")
 
-
-class SpikeModBox(ParamBox):
-    def __init__(self, mod, tag, title, position, size):
-        ParamBox.__init__(self, mod, title, position, size, tag, 0, 1)
-
-        self.autorun = False
-
-        # Initialise Menu 
-        self.InitMenu()
-
-        # Model Flags
-        self.AddFlag("randomflag", "Fixed Random Seed", 0)  # menu accessed flags for switching model code
-
-
-        # Parameter controls
-        #
-        # AddCon(tag string, display string, initial value, click increment, decimal places)
-        # ----------------------------------------------------------------------------------
-        self.paramset.AddCon("runtime", "Run Time", 2000, 1, 0)
-        self.paramset.AddCon("hstep", "h Step", 1, 0.1, 1)
-        self.paramset.AddCon("Vrest", "Vrest", -62, 0.1, 2)
-        self.paramset.AddCon("Vthresh", "Vthresh", -50, 0.1, 2)
-        self.paramset.AddCon("psprate", "PSP Rate", 300, 1, 0)
-        self.paramset.AddCon("pspratio", "PSP ratio", 1, 0.1, 2)
-        self.paramset.AddCon("pspmag", "PSP mag", 3, 0.1, 2)
-        self.paramset.AddCon("halflifeMem", "halflifeMem", 7.5, 0.1, 2)
-        self.paramset.AddCon("kHAP", "kHAP", 60, 0.1, 2)
-        self.paramset.AddCon("halflifeHAP", "halflifeHAP", 8, 0.1, 2)
-        self.paramset.AddCon("kAHP", "kAHP", 0.5, 0.01, 2)
-        self.paramset.AddCon("halflifeAHP", "halflifeAHP", 500, 1, 2)
-
-        self.ParamLayout(2)   # layout parameter controls in two columns
-
-        # ----------------------------------------------------------------------------------
-
-        runbox = self.RunBox()
-        paramfilebox = self.StoreBoxSync()
-
-
-        ID_Grid = wx.NewIdRef()
-        self.AddPanelButton(ID_Grid, "Grid", self.mod.gridbox)
-
-        self.mainbox.AddSpacer(5)
-        self.mainbox.Add(self.pconbox, 1, wx.ALIGN_CENTRE_HORIZONTAL|wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 0)
-        self.mainbox.AddStretchSpacer(5)
-        self.mainbox.Add(runbox, 0, wx.ALIGN_CENTRE_HORIZONTAL|wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 0)
-        self.mainbox.AddSpacer(5)
-        self.mainbox.Add(paramfilebox, 0, wx.ALIGN_CENTRE_HORIZONTAL|wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 0)    
-        self.mainbox.Add(self.buttonbox, 0, wx.ALIGN_CENTRE_HORIZONTAL | wx.ALIGN_CENTRE_VERTICAL | wx.ALL, 0)
-        self.mainbox.AddSpacer(5)
-        self.panel.Layout()
 
 
     
