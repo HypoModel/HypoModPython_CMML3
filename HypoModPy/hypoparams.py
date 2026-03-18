@@ -19,6 +19,7 @@ class ParamCon(wx.Control):
         self.panel = panel
         self.pad = panel.controlborder
         self.cycle = False
+        self.oldvalue = initval
 
         self.diagmode = False
 
@@ -560,6 +561,7 @@ class ParamBox(ToolBox):
         self.panelrefs[id] = toolbox
         button = self.AddButton(id, label, self.buttonwidth, self.buttonbox)
         button.Bind(wx.EVT_BUTTON, self.OnPanel)
+        self.panelbuttoncount += 1
        
 
     def OnPanel(self, event):

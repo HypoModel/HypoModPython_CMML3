@@ -5,7 +5,7 @@ from HypoModPy.hypoparams import ParamBox
 
 
 
-class SpikeModBox(ParamBox):
+class SpikeBox(ParamBox):
     def __init__(self, mod, tag, title, position, size):
         ParamBox.__init__(self, mod, title, position, size, tag, 0, 1)
 
@@ -35,6 +35,8 @@ class SpikeModBox(ParamBox):
         self.paramset.AddCon("kAHP", "kAHP", 0.5, 0.01, 2)
         self.paramset.AddCon("halflifeAHP", "halflifeAHP", 500, 1, 2)
 
+        self.paramset.GetCon("runtime").SetMinMax(10, 10000)
+
         self.ParamLayout(2)   # layout parameter controls in two columns
 
         # ----------------------------------------------------------------------------------
@@ -43,15 +45,17 @@ class SpikeModBox(ParamBox):
         paramfilebox = self.StoreBoxSync()
 
         databox = wx.BoxSizer(wx.HORIZONTAL)
-        self.freq = self.NumPanel(50, wx.ALIGN_RIGHT)
-        databox.Add(wx.StaticText(self.panel, wx.ID_STATIC, "Freq"), 0, wx.ALIGN_CENTRE|wx.ST_NO_AUTORESIZE)
+        self.freq = self.NumPanel(60, wx.ALIGN_RIGHT)
+        label = wx.StaticText(self.panel, wx.ID_STATIC, "Freq")
+        label.SetFont(wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD))
+        databox.Add(label,0, (wx.ALIGN_CENTRE|wx.ST_NO_AUTORESIZE))
         databox.AddSpacer(10)   
         databox.Add(self.freq)
 
         ID_Grid = wx.NewIdRef()
         self.AddPanelButton(ID_Grid, "Grid", self.mod.gridbox)
         ID_Sec = wx.NewIdRef()
-        self.AddPanelButton(ID_Sec, "Sec", self.mod.secmodbox)
+        self.AddPanelButton(ID_Sec, "Sec", self.mod.secbox)
 
         self.mainbox.AddSpacer(5)
         self.mainbox.Add(self.pconbox, 1, wx.ALIGN_CENTRE_HORIZONTAL|wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 0)
@@ -67,11 +71,25 @@ class SpikeModBox(ParamBox):
 
 
     def SpikeData(self, data):
-        self.freq.SetLabel(f"{data.freq:.1f} Hz")
+        self.freq.SetLabel(f"{data.freq:.2f} Hz")
+
+
+    def OnStore(self, event):
+        if self.synccheck.GetValue():
+            filetag = self.storetag.GetValue()
+            self.mod.secbox.ParamStore(filetag)   
+        return super().OnStore(event)
+    
+
+    def OnLoad(self, event):
+        if self.synccheck.GetValue():
+            filetag = self.storetag.GetValue()
+            self.mod.secbox.ParamLoad(filetag)   
+        return super().OnLoad(event)
 
 
 
-class SecModBox(ParamBox):
+class SecBox(ParamBox):
     def __init__(self, mod, tag, title, position, size):
         ParamBox.__init__(self, mod, title, position, size, tag, 0, 1)
 

@@ -10,8 +10,22 @@ from HypoModPy.hypodat import *
 from HypoModPy.hypogrid import *
 from HypoModPy.hypospikes import *
 
-from spikepanels import SpikeModBox, SecModBox
+from spikepanels import SpikeBox, SecBox
 
+
+
+class SecData():
+    def __init__(self, size):
+        self.size = size
+        self.secP = pdata(size)   # releasable pool
+        self.secR = pdata(size)   # reserve pool
+        self.secX = pdata(size)   # secretion rate
+        self.secPlasma = pdata(size)   # plasma concentration
+        self.secE = pdata(size)   # fast Ca2+
+        self.secC = pdata(size)   # slow Ca2+
+        self.secB = pdata(size)   # spike broadening
+
+    
 
 class SpikeMod(Mod):
     def __init__(self, mainwin, tag):
@@ -24,12 +38,13 @@ class SpikeMod(Mod):
             os.mkdir(self.path)
 
         self.mainwin = mainwin
+        self.datsample = 1000       # sample interval for secretion model data, 1 Hz
 
         # tool boxes
         self.gridbox = GridBox(self, "Data Grid", wx.Point(0, 0), wx.Size(320, 500), 100, 20)
         self.gridbox.NeuroButton()
-        self.secmodbox = SecModBox(self, "secmod", "Secretion Model", wx.Point(0, 0), wx.Size(320, 500))
-        self.spikemodbox = SpikeModBox(self, "spikemod", "Spike Model", wx.Point(0, 0), wx.Size(320, 500))
+        self.secbox = SecBox(self, "secmod", "Secretion Model", wx.Point(0, 0), wx.Size(320, 500))
+        self.spikebox = SpikeBox(self, "spikemod", "Spike Model", wx.Point(0, 0), wx.Size(320, 500))
         self.spikedatabox = SpikeDataBox(self, "spikedatabox", "Spike Data", wx.Point(0, 0), wx.Size(320, 500))
 
         # link mod owned boxes
@@ -43,13 +58,16 @@ class SpikeMod(Mod):
         # spike data stores
         self.spikedata = []
 
-        self.AddTool(self.spikemodbox)
-        self.AddTool(self.secmodbox)
+        # secretion data stores
+        self.secdata = SecData(1000000)
+
+        self.AddTool(self.spikebox)
+        self.AddTool(self.secbox)
         self.AddTool(self.gridbox)
         self.AddTool(self.spikedatabox)
     
-        self.spikemodbox.Show(True)
-        self.modbox = self.spikemodbox
+        self.spikebox.Show(True)
+        self.modbox = self.spikebox
 
         self.ModLoad()
         print("Spike Model OK")
@@ -78,6 +96,13 @@ class SpikeMod(Mod):
         self.IoDGraph(self.cellspike.IoDdata, self.cellspike.IoDdataX, "IoD Cell", "iodcell", "lightblue", 10)
         self.IoDGraph(self.modspike.IoDdata, self.modspike.IoDdataX, "IoD Mod", "iodmod", "lightgreen", 0)
 
+        self.plotbase.AddPlot(PlotDat(self.secdata.secP, 0, 500, 0, 5000, "Secretion P", "line", 1, "blue", 1000 / self.datsample), "secP")
+        self.plotbase.AddPlot(PlotDat(self.secdata.secR, 0, 500, 0, 20000, "Secretion R", "line", 1, "green", 1000 / self.datsample), "secR")
+        self.plotbase.AddPlot(PlotDat(self.secdata.secX, 0, 500, 0, 30, "Secretion X", "line", 1, "lightred", 1000 / self.datsample), "secX")
+        self.plotbase.AddPlot(PlotDat(self.secdata.secPlasma, 0, 500, 0, 30, "Plasma Conc", "line", 1, "purple", 1000 / self.datsample), "secPlasma")
+        self.plotbase.AddPlot(PlotDat(self.secdata.secE, 0, 500, 0, 5, "Secretion E", "line", 1, "lightred", 1000 / self.datsample), "secE")
+        self.plotbase.AddPlot(PlotDat(self.secdata.secC, 0, 500, 0, 5, "Secretion C", "line", 1, "lightred", 1000 / self.datsample), "secC")
+        self.plotbase.AddPlot(PlotDat(self.secdata.secB, 0, 500, 0, 5, "Secretion B", "line", 1, "green", 1000 / self.datsample), "secB")
 
 
     def DefaultPlots(self):
@@ -102,7 +127,7 @@ class SpikeMod(Mod):
         DiagWrite("ModelData() call\n")
 
         self.modspike.Analysis()
-        self.spikemodbox.SpikeData(self.modspike)
+        self.spikebox.SpikeData(self.modspike)
         self.mainwin.scalebox.GraphUpdateAll()
 
 
@@ -114,7 +139,7 @@ class SpikeMod(Mod):
 
 
     def OnModThreadProgress(self, event):
-        self.spikemodbox.SetCount(event.GetInt())
+        self.spikebox.SetCount(event.GetInt())
         #DiagWrite(f"Model thread progress, value {event.GetInt()}\n\n")
 
 
@@ -124,7 +149,7 @@ class SpikeMod(Mod):
             self.runflag = True
             params = {
                 "spike": self.modbox.GetParams(),
-                "sec": self.secmodbox.GetParams()
+                "sec": self.secbox.GetParams()
             }
 
             # multibox example
@@ -147,7 +172,7 @@ class SpikeModel(ModThread):
 
         self.params = params
         self.mod = mod
-        self.spikemodbox = mod.spikemodbox
+        self.spikebox = mod.spikebox
         self.mainwin = mod.mainwin
         self.scalebox = mod.mainwin.scalebox
 
@@ -155,7 +180,7 @@ class SpikeModel(ModThread):
     # run() is the thread entry function, used to initialise and call the main Model() function   
     def run(self):
         # Read model flags
-        self.randomflag = self.spikemodbox.modflags["randomflag"]      # model flags are useful for switching elements of the model code while running
+        self.randomflag = self.spikebox.modflags["randomflag"]      # model flags are useful for switching elements of the model code while running
 
         if self.randomflag: random.seed(0)
         else: random.seed(datetime.now().microsecond)
@@ -169,7 +194,14 @@ class SpikeModel(ModThread):
 
     # Model() reads in the model parameters, initialises variables, and runs the main model loop
     def Model(self):
+
+        # Data stores
+        datsample = self.mod.datsample
+        secsize = self.mod.secdata.size
         spikedata = self.mod.modspike
+        secdata = self.mod.secdata
+
+        # Parameter stores
         spikeparams = self.params["spike"]
         secparams = self.params["sec"]
 
@@ -221,8 +253,6 @@ class SpikeModel(ModThread):
         tauC = math.log(2) / halflifeC
         tauDiff = math.log(2) / secparams["halflifeDiff"]
         tauClear = math.log(2) / secparams["halflifeClear"]
-
-
 
         # Initialise variables
         epsprate = 0
@@ -322,6 +352,16 @@ class SpikeModel(ModThread):
             #tEVF = tEVF + tPlasma * tauDiff - tEVF
 
 
+            if i % datsample == 0 and i < secsize * datsample:
+                secdata.secP[int(i/datsample)] = tP
+                secdata.secR[int(i/datsample)] = tR
+                secdata.secX[int(i/datsample)] = secX
+                secdata.secPlasma[int(i/datsample)] = tPlasma
+                secdata.secE[int(i/datsample)] = tE
+                secdata.secC[int(i/datsample)] = tC
+                secdata.secB[int(i/datsample)] = tB
+
+
             # Spiking
             if V > Vthresh and ttime >= absref:
 
@@ -340,6 +380,8 @@ class SpikeModel(ModThread):
                 tC = tC + kC * CaEnt	
                 
                 ttime = 0   # reset time since last spike
+
+            
 
         # Finalise data
         freq = spikedata.spikecount / (runtime / 1000)
