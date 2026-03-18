@@ -38,7 +38,7 @@ class SpikeMod(Mod):
             os.mkdir(self.path)
 
         self.mainwin = mainwin
-        self.datsample = 1000       # sample interval for secretion model data, 1 Hz
+        self.datsample = 1       # ms sample interval for secretion model data, 1000 = 1 sample per second
 
         # tool boxes
         self.gridbox = GridBox(self, "Data Grid", wx.Point(0, 0), wx.Size(320, 500), 100, 20)
@@ -234,6 +234,7 @@ class SpikeModel(ModThread):
         kB = secparams["kB"]
         kE = secparams["kE"]
         kC = secparams["kC"]
+        VolPlasma = secparams["VolPlasma"]
 
         epspmag = pspmag
         ipspmag = pspmag
@@ -253,6 +254,10 @@ class SpikeModel(ModThread):
         tauC = math.log(2) / halflifeC
         tauDiff = math.log(2) / secparams["halflifeDiff"]
         tauClear = math.log(2) / secparams["halflifeClear"]
+
+        alpha = alpha / 1000   # convert from per second to per ms, as model runs in ms time steps
+        tauClear = tauClear / 1000   # convert from per second to per ms, as model runs in ms time steps
+        tauDiff = tauDiff / 1000   # convert from per second to per ms, as model runs in ms time steps
 
         # Initialise variables
         epsprate = 0
@@ -356,7 +361,7 @@ class SpikeModel(ModThread):
                 secdata.secP[int(i/datsample)] = tP
                 secdata.secR[int(i/datsample)] = tR
                 secdata.secX[int(i/datsample)] = secX
-                secdata.secPlasma[int(i/datsample)] = tPlasma
+                secdata.secPlasma[int(i/datsample)] = tPlasma / VolPlasma   # convert to concentration 
                 secdata.secE[int(i/datsample)] = tE
                 secdata.secC[int(i/datsample)] = tC
                 secdata.secB[int(i/datsample)] = tB

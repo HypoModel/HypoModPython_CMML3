@@ -102,6 +102,7 @@ class SecBox(ParamBox):
         #
         # AddCon(tag string, display string, initial value, click increment, decimal places)
         # ----------------------------------------------------------------------------------
+        self.paramset.con_labelwidth = 80
         self.paramset.AddCon("kB", "kB", 0.021, 0.001, 3)
         self.paramset.AddCon("halflifeB", "halflifeB", 2000, 50, 0)
         self.paramset.AddCon("Bbase", "Bbase", 0.5, 0.05, 2)
@@ -114,14 +115,14 @@ class SecBox(ParamBox):
         self.paramset.AddCon("Eth", "Eth", 12, 0.05, 2)
         self.paramset.AddCon("Egradient", "E Grad", 5, 0.1, 2)
         self.paramset.AddCon("beta", "beta", 120, 1, 1)
-        self.paramset.AddCon("Rmax", "Res Max", 2000000, 100000, 0)
-        self.paramset.AddCon("Rinit", "Res Init", 2000000, 100000, 0)
+        self.paramset.AddCon("Rmax", "Res Max", 1000000, 100000, 0)
+        self.paramset.AddCon("Rinit", "Res Init", 1000000, 100000, 0)
         self.paramset.AddCon("Pmax", "Pool Max", 5000, 500, 0)
         self.paramset.AddCon("alpha", "alpha", 0.003, 0.0001, 6)
         self.paramset.AddCon("plasma_hstep", "hstep Plas", 1, 1, 0)
         self.paramset.AddCon("halflifeDiff", "Diff HL", 61, 5, 0)   # 100sec, half life to pass between plasma and ECF. Just a guess.
         self.paramset.AddCon("halflifeClear", "Clear HL", 68, 5, 0)   # 58sec half life to be destroyed through the kidneys.
-        self.paramset.AddCon("VolPlasma", "Plasma (ml)", 8.5, 0.5, 1)   # Total amount of plasma in a rat. 8.5ml for a 250g rat.
+        self.paramset.AddCon("VolPlasma", "Plasma (ml)", 100, 0.5, 1)   # Total amount of plasma in a rat. 8.5ml for a 250g rat.
         self.paramset.AddCon("VolEVF", "EVFluid (ml)", 9.75, 0.5, 2)   # Total amount of Extra Cellular Fluid (without plasma) in a rat.
         self.paramset.AddCon("secExp", "Sec Exp", 2, 0.1, 2)  # Exponent of the fast [Ca2+], e, when calculating the final secretion.
 
