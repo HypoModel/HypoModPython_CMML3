@@ -784,7 +784,7 @@ class GridBox(ParamBox):
             #mod->cellbox->datneuron->SetLabel("NO DATA");
         else:
             DiagWrite(f"Neuro scan: {cellcount} cells read OK\n")
-            cellpanel.SetCount(cellcount)
+            cellpanel.SetDataCount(cellcount)
 
         # multi cell analysis
         # neurobox->cellpanel->MultiCellAnalysis();

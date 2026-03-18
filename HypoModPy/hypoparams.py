@@ -532,6 +532,7 @@ class ParamBox(ToolBox):
     def SetCount(self, value):
         if self.runcount is not None:
             self.runcount.SetLabel(f"{value} %")
+            #DiagWrite(f"Set count, value {value}\n\n")
 
 
     def InitMenu(self, type = "menu_model"):
@@ -550,10 +551,6 @@ class ParamBox(ToolBox):
             menuBar.Append(self.menuMode, "Mode")
 
         self.SetMenuBar(menuBar)
-
-
-    def SetCount(self, count):
-        self.runcount.SetLabel("{} %%".format(count))
        
 
     def AddPanelButton(self, id, label, toolbox):

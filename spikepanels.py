@@ -42,6 +42,11 @@ class SpikeModBox(ParamBox):
         runbox = self.RunBox()
         paramfilebox = self.StoreBoxSync()
 
+        databox = wx.BoxSizer(wx.HORIZONTAL)
+        self.freq = self.NumPanel(50, wx.ALIGN_RIGHT)
+        databox.Add(wx.StaticText(self.panel, wx.ID_STATIC, "Freq"), 0, wx.ALIGN_CENTRE|wx.ST_NO_AUTORESIZE)
+        databox.AddSpacer(10)   
+        databox.Add(self.freq)
 
         ID_Grid = wx.NewIdRef()
         self.AddPanelButton(ID_Grid, "Grid", self.mod.gridbox)
@@ -53,10 +58,16 @@ class SpikeModBox(ParamBox):
         self.mainbox.AddStretchSpacer(5)
         self.mainbox.Add(runbox, 0, wx.ALIGN_CENTRE_HORIZONTAL|wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 0)
         self.mainbox.AddSpacer(5)
+        self.mainbox.Add(databox, 0, wx.ALIGN_CENTRE_HORIZONTAL|wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 0)
+        self.mainbox.AddSpacer(5)
         self.mainbox.Add(paramfilebox, 0, wx.ALIGN_CENTRE_HORIZONTAL|wx.ALIGN_CENTRE_VERTICAL|wx.ALL, 0)    
         self.mainbox.Add(self.buttonbox, 0, wx.ALIGN_CENTRE_HORIZONTAL | wx.ALIGN_CENTRE_VERTICAL | wx.ALL, 0)
         self.mainbox.AddSpacer(5)
         self.panel.Layout()
+
+
+    def SpikeData(self, data):
+        self.freq.SetLabel(f"{data.freq:.1f} Hz")
 
 
 

@@ -102,6 +102,7 @@ class SpikeMod(Mod):
         DiagWrite("ModelData() call\n")
 
         self.modspike.Analysis()
+        self.spikemodbox.SpikeData(self.modspike)
         self.mainwin.scalebox.GraphUpdateAll()
 
 

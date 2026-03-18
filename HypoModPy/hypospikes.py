@@ -103,7 +103,7 @@ class SpikeDataPanel(ToolPanel):
         self.Layout()
 
 
-    def SetCount(self, count):
+    def SetDataCount(self, count):
        self.cellcount = count
        if self.cellindex > self.cellcount: self.cellindex = 0
        #neuropop.numneurons = count;
